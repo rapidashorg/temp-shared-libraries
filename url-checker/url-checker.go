@@ -29,6 +29,11 @@ func (h *urlChecker) Validate(rawURL string) error {
 		}
 	}
 
+	// skip checking blocked host and ip for force whitelist only
+	if h.forceWhitelistOnly {
+		return ErrHostBlocked
+	}
+
 	for _, v := range h.reBlockedHosts {
 		if v.Match(host) {
 			return ErrHostBlocked

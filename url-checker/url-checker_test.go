@@ -9,6 +9,7 @@ import (
 func Test_urlChecker_Validate(t *testing.T) {
 	type fields struct {
 		allowIP            bool
+		forceWhitelistOnly bool
 		reBlockedHosts     []*regexp.Regexp
 		blockedCIDRs       []*net.IPNet
 		reWhitelistedHosts []*regexp.Regexp
@@ -81,6 +82,62 @@ func Test_urlChecker_Validate(t *testing.T) {
 			args: args{
 				rawURL: "https://10.1.16.22:8000/internal-image.jpg",
 			},
+		},
+		{
+			name: "error host is not whitelisted - force whitelist only",
+			fields: fields{
+				forceWhitelistOnly: true,
+				reBlockedHosts: []*regexp.Regexp{
+					regexp.MustCompile(`.*\.?tokopedia\.id`),
+				},
+				reWhitelistedHosts: []*regexp.Regexp{
+					regexp.MustCompile(`ecs7\.tokopedia\.id`),
+				},
+				blockedCIDRs: []*net.IPNet{
+					func() *net.IPNet {
+						_, r, _ := net.ParseCIDR(`0.0.0.0/0`)
+						return r
+					}(),
+				},
+				whitelistedCIDRs: []*net.IPNet{
+					func() *net.IPNet {
+						_, r, _ := net.ParseCIDR(`10.1.0.0/16`)
+						return r
+					}(),
+				},
+			},
+			args: args{
+				rawURL: "https://ecs7.tokopedia.com/internal-image.jpg",
+			},
+			wantErr: true,
+		},
+		{
+			name: "error ip is not whitelisted - force whitelist",
+			fields: fields{
+				forceWhitelistOnly: true,
+				reBlockedHosts: []*regexp.Regexp{
+					regexp.MustCompile(`.*\.?tokopedia\.id`),
+				},
+				reWhitelistedHosts: []*regexp.Regexp{
+					regexp.MustCompile(`ecs7\.tokopedia\.id`),
+				},
+				blockedCIDRs: []*net.IPNet{
+					func() *net.IPNet {
+						_, r, _ := net.ParseCIDR(`0.0.0.0/0`)
+						return r
+					}(),
+				},
+				whitelistedCIDRs: []*net.IPNet{
+					func() *net.IPNet {
+						_, r, _ := net.ParseCIDR(`10.2.0.0/16`)
+						return r
+					}(),
+				},
+			},
+			args: args{
+				rawURL: "https://10.1.16.22:8000/internal-image.jpg",
+			},
+			wantErr: true,
 		},
 		{
 			name: "error host is blocked",
@@ -195,6 +252,7 @@ func Test_urlChecker_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := &urlChecker{
 				allowIP:            tt.fields.allowIP,
+				forceWhitelistOnly: tt.fields.forceWhitelistOnly,
 				reBlockedHosts:     tt.fields.reBlockedHosts,
 				blockedCIDRs:       tt.fields.blockedCIDRs,
 				reWhitelistedHosts: tt.fields.reWhitelistedHosts,

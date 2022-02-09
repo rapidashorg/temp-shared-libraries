@@ -14,7 +14,8 @@ type URLChecker interface {
 }
 
 type urlChecker struct {
-	allowIP bool
+	allowIP            bool
+	forceWhitelistOnly bool
 
 	reBlockedHosts []*regexp.Regexp
 	blockedCIDRs   []*net.IPNet
@@ -24,7 +25,8 @@ type urlChecker struct {
 }
 
 type Config struct {
-	AllowIP bool
+	AllowIP            bool
+	ForceWhitelistOnly bool
 
 	BlacklistedHosts []string
 	BlacklistedCIDRs []string
@@ -75,7 +77,8 @@ func New(cfg *Config) (URLChecker, error) {
 	}
 
 	return &urlChecker{
-		allowIP: cfg.AllowIP,
+		allowIP:            cfg.AllowIP,
+		forceWhitelistOnly: cfg.ForceWhitelistOnly,
 
 		reBlockedHosts: reBlockedHosts,
 		blockedCIDRs:   blockedCIDRs,
